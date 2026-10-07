@@ -1,0 +1,11 @@
+{
+  "name": "work-report",
+  "owner": { "name": "yer9ali" },
+  "plugins": [
+    {
+      "name": "work-report",
+      "source": "./plugins/work-report",
+      "description": "Карточки выполненных задач за день и недельный отчёт по регламенту"
+    }
+  ]
+}
