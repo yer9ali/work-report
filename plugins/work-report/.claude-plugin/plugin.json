@@ -1,6 +1,6 @@
 {
   "name": "work-report",
   "displayName": "Work Report",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Карточки выполненных задач за день и недельный отчёт по регламенту из git и истории сессий Claude Code"
 }
