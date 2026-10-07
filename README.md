@@ -7,10 +7,13 @@
 
 ## Установка
 ```
-/plugin marketplace add https://github.com/yer9ali/work-report.git
+/plugin marketplace add yer9ali/work-report
 /plugin install work-report@work-report
 ```
-Обновление: `/plugin update work-report@work-report`.
+Или из терминала: `claude plugin marketplace add yer9ali/work-report` и
+`claude plugin install work-report@work-report`. Затем перезапустите Claude Code.
+
+Чтобы обновления приходили сами, включите автообновление маркетплейса: `/plugin` → Marketplaces.
 
 ## Вызов
 - `/work-report` — карточки за сегодня;
