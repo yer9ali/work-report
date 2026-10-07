@@ -159,3 +159,22 @@ def test_authorization_can_have_scheme_word() -> None:
     assert masked == "Authorization: ***"
     assert "Bearer" not in masked or "Bearer ***" in masked
     assert "token123xyz" not in masked
+
+
+def test_github_tokens_pem_keys_and_cookies_are_masked() -> None:
+    pem = "-----BEGIN RSA PRIVATE KEY-----\nMIIEow\nIBAAK\n-----END RSA PRIVATE KEY-----"
+    text = (
+        "git clone with ghp_abcdefghijklmnopqrstuvwxyz0123456789 ok\n"
+        "pat github_pat_11ABCDEFG0123456789_abcdefghijklmnop\n"
+        f"{pem}\n"
+        "Cookie: session=abc123; theme=dark\n"
+        "set-cookie: sid=xyz789; Path=/\n"
+    )
+
+    masked = mask_secrets(text)
+
+    for secret in ("ghp_abc", "github_pat_11", "MIIEow", "abc123", "xyz789"):
+        assert secret not in masked, secret
+    assert "git clone with *** ok" in masked
+    assert "[private key]" in masked
+    assert "Cookie: ***" in masked

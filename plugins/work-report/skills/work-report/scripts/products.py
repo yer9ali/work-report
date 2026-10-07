@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-UNKNOWN = "unknown"
-
 
 def _read(path: Path) -> dict[str, str]:
     try:
@@ -21,4 +19,4 @@ def load_products(shared: Path, personal: Path) -> dict[str, str]:
 
 
 def product_for(repo_name: str, mapping: dict[str, str]) -> str:
-    return mapping.get(repo_name, UNKNOWN)
+    return mapping.get(repo_name, repo_name)

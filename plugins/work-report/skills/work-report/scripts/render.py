@@ -63,7 +63,8 @@ def _lines(
 
     out = [f"# Выжимка {start.isoformat()} — {end.isoformat()}", f"источники: {', '.join(sources)}"]
     for act in sorted(activities, key=lambda a: -a.weight):
-        out += ["", f"## {act.product} ({act.repo_name})"]
+        title = act.product if act.product == act.repo_name else f"{act.product} ({act.repo_name})"
+        out += ["", f"## {title}"]
         if act.commits or act.merges:
             out.append("### Коммиты")
             out += [

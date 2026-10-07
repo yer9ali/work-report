@@ -47,14 +47,11 @@ def repo_root(cwd: str) -> Path | None:
     path = Path(cwd)
     if not cwd or not path.is_dir():
         return None
-    common = _git(path, "rev-parse", "--path-format=absolute", "--git-common-dir")
-    if common is None:  # git < 2.31: no --path-format, the path may come back relative
-        common = _git(path, "rev-parse", "--git-common-dir")
-        if common is None:
-            return None
-        common_dir = (path / common.strip()).resolve()
-    else:
-        common_dir = Path(common.strip())
+    # No --path-format: git < 2.31 echoes it back instead of failing. The path may be relative.
+    common = _git(path, "rev-parse", "--git-common-dir")
+    if common is None:
+        return None
+    common_dir = (path / common.strip()).resolve()
     if common_dir.name == ".git":
         return common_dir.parent.resolve()
     top = _git(path, "rev-parse", "--show-toplevel")
@@ -141,6 +138,12 @@ def own_merges(repo: Path, authors: list[str], start: datetime, end: datetime) -
                 sha[:7], at, found.group(1) if found else subject, target.removeprefix("origin/")
             )
     return sorted(merges.values(), key=lambda m: m.at)
+
+
+def own_email(repo: Path) -> list[str]:
+    """The repo's user.email (local config wins over global) — the default identity."""
+    email = (_git(repo, "config", "user.email") or "").strip()
+    return [email] if email else []
 
 
 def recent_authors(repo: Path, days: int) -> list[str]:

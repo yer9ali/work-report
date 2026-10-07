@@ -59,3 +59,11 @@ def test_a_flood_of_claude_mem_summaries_does_not_push_out_session_titles_and_ou
     assert len(text.splitlines()) <= 100
     assert text.count("«Проверка цикла»") == 5
     assert text.count("5 x") == 5  # last turn of every session survives
+
+
+def test_unmapped_repo_is_titled_by_its_name_once() -> None:
+    activity = Activity("promo_bar", "promo_bar", [], [], [_session(2, 10)], [])
+
+    text = render([activity], date(2026, 10, 7), date(2026, 10, 7), ["git"], TZ)
+
+    assert "\n## promo_bar\n" in text

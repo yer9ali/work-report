@@ -33,7 +33,8 @@ def _git(
 def _repo(tmp_path: Path) -> Path:
     repo = tmp_path / "shop_api"
     repo.mkdir()
-    _git(repo, "init", "-q", "-b", "dev")
+    _git(repo, "init", "-q")
+    _git(repo, "symbolic-ref", "HEAD", "refs/heads/dev")
     _git(repo, "commit", "-q", "--allow-empty", "-m", "старт", when="2026-10-01T10:00:00+00:00")
     return repo
 
@@ -90,6 +91,7 @@ def test_repo_root_resolves_worktrees_and_rejects_non_git(tmp_path: Path) -> Non
     _git(repo, "worktree", "add", "-q", str(worktree), "-b", "wt-branch")
 
     assert repo_root(str(worktree)) == repo.resolve()
+    assert repo_root(str(repo)) == repo.resolve()
     assert repo_root(str(tmp_path / "missing")) is None
     plain = tmp_path / "plain"
     plain.mkdir()
@@ -133,13 +135,3 @@ def test_old_git_without_since_as_filter_still_works(tmp_path: Path, monkeypatch
     assert [c.subject for c in own_commits(repo, ["me@example.com"], START, END)] == ["Фича"]
     [merge] = own_merges(repo, ["me@example.com"], START, END)
     assert (merge.branch, merge.target) == ("feat/x", "dev")
-
-
-def test_old_git_without_path_format_still_resolves_root(tmp_path: Path, monkeypatch) -> None:
-    repo = _repo(tmp_path)
-    worktree = tmp_path / "wt"
-    _git(repo, "worktree", "add", "-q", str(worktree), "-b", "wt-branch")
-    _old_git(monkeypatch, ("--path-format=absolute",))
-
-    assert repo_root(str(worktree)) == repo.resolve()
-    assert repo_root(str(repo)) == repo.resolve()

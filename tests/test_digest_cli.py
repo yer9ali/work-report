@@ -23,7 +23,8 @@ def _git(repo: Path, *args: str) -> None:
 def _setup(tmp_path: Path) -> dict[str, Path]:
     repo = tmp_path / "shop_api"
     repo.mkdir()
-    _git(repo, "init", "-q", "-b", "dev")
+    _git(repo, "init", "-q")
+    _git(repo, "symbolic-ref", "HEAD", "refs/heads/dev")
     _git(repo, "commit", "-q", "--allow-empty", "-m", "Полный цикл заказа, password=hunter2")
     claude = tmp_path / ".claude"
     folder = claude / "projects" / "p"
@@ -68,13 +69,15 @@ def test_digest_without_claude_mem_is_complete_and_masked(tmp_path: Path) -> Non
     assert "hunter2" not in done.stdout
 
 
-def test_missing_config_exits_with_a_hint(tmp_path: Path) -> None:
-    done = _run(
-        "--from", "2026-10-07", "--to", "2026-10-07", "--config", str(tmp_path / "missing.json")
-    )
+def test_without_config_own_commits_come_from_repo_user_email(tmp_path: Path) -> None:
+    p = _setup(tmp_path)
+    _git(p["repo"], "config", "user.email", "ME@example.com")
+    p["config"].unlink()
 
-    assert done.returncode == 3
-    assert "--suggest-authors" in done.stderr
+    done = _base(p, tmp_path)
+
+    assert done.returncode == 0, done.stderr
+    assert "Полный цикл заказа" in done.stdout
 
 
 def test_suggest_authors_lists_committers_of_session_repos(tmp_path: Path) -> None:
@@ -94,13 +97,17 @@ def _base(p: dict[str, Path], tmp_path: Path, *extra: str) -> subprocess.Complet
     )  # fmt: skip
 
 
-def test_invalid_config_shapes_exit_3_with_a_hint(tmp_path: Path) -> None:
+def test_broken_config_exits_3_and_bad_authors_are_ignored(tmp_path: Path) -> None:
     p = _setup(tmp_path)
-    for bad in ('{"authors": null}', "[]", '{"authors": "me@example.com"}', '{"authors": []}'):
+    for bad in ("[]", "{not json"):
         p["config"].write_text(bad, encoding="utf-8")
         done = _base(p, tmp_path)
         assert done.returncode == 3, bad
-        assert "authors" in done.stderr
+        assert "JSON-объект" in done.stderr
+    p["config"].write_text('{"authors": "me@example.com"}', encoding="utf-8")
+    done = _base(p, tmp_path)
+    assert done.returncode == 0, done.stderr
+    assert "authors" in done.stderr
 
 
 def test_bad_extra_repos_is_ignored_with_a_warning(tmp_path: Path) -> None:

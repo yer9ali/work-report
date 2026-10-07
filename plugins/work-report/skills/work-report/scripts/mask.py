@@ -37,6 +37,15 @@ _KEY_VALUE_OTHER = re.compile(
 # Bare Bearer, Basic, or Token scheme without a key name
 _BARE_SCHEME = re.compile(r"\b(Bearer|Basic|Token)[ \t]+([A-Za-z0-9._~+/=-]{8,})")
 
+_GITHUB_TOKEN = re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_\w{20,})")
+
+_PRIVATE_KEY = re.compile(
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.S
+)
+
+# A cookie header carries several secrets at once — mask the whole value.
+_COOKIE = re.compile(r"(?im)^(\s*(?:set-)?cookie\s*:\s*).+$")
+
 _LONG_BASE64 = re.compile(r"[A-Za-z0-9+/]{200,}={0,2}")
 
 
@@ -56,6 +65,9 @@ def _mask_value(match: re.Match[str]) -> str:
 
 
 def mask_secrets(text: str) -> str:
+    text = _PRIVATE_KEY.sub("[private key]", text)
+    text = _GITHUB_TOKEN.sub("***", text)
+    text = _COOKIE.sub(r"\1***", text)
     text = _PASSWORD_ELEMENT.sub(r"\1***\4", text)
     # Apply authorization-specific pattern first (allows two-word values)
     text = _KEY_VALUE_AUTH.sub(_mask_value, text)

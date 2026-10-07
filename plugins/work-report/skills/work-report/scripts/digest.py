@@ -19,12 +19,12 @@ from mem import read_summaries
 from period import period_bounds
 from products import load_products, product_for
 from render import Activity, render
-from repos import own_commits, own_merges, recent_authors, repo_root
+from repos import own_commits, own_email, own_merges, recent_authors, repo_root
 from sessions import collect_sessions
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_REPORTS = Path("~/work-reports").expanduser()
-EXIT_NO_CONFIG = 3
+EXIT_BAD_CONFIG = 3
 DEFAULT_EXCLUDES = ("~/.claude-mem",)
 
 
@@ -78,21 +78,14 @@ def main(argv: list[str]) -> int:
         return 2
     try:
         config = json.loads(args.config.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        config = {}
     except (OSError, ValueError):
-        print(
-            f"нет конфига {args.config}: сначала digest.py --suggest-authors и создать "
-            "config.json с полем authors",
-            file=sys.stderr,
-        )
-        return EXIT_NO_CONFIG
-    authors = config.get("authors") if isinstance(config, dict) else None
-    if not (isinstance(authors, list) and authors and all(isinstance(a, str) for a in authors)):
-        print(
-            f"конфиг {args.config}: нужен объект с непустым списком строк authors "
-            '(например {"authors": ["me@example.com"]})',
-            file=sys.stderr,
-        )
-        return EXIT_NO_CONFIG
+        config = None
+    if not isinstance(config, dict):
+        print(f"конфиг {args.config}: нужен JSON-объект — исправь или удали файл", file=sys.stderr)
+        return EXIT_BAD_CONFIG
+    authors = _str_list(config, "authors")
     reports_dir = Path(config.get("reports_dir", DEFAULT_REPORTS)).expanduser()
     extra_repos = _str_list(config, "extra_repos")
     excludes = [_resolved(p) for p in (*DEFAULT_EXCLUDES, *_str_list(config, "exclude_paths"))]
@@ -123,8 +116,9 @@ def main(argv: list[str]) -> int:
     for name, root in roots.items():
         if root is None:
             continue
-        commits = own_commits(root, authors, start, end)
-        merges = own_merges(root, authors, start, end)
+        mine = [*authors, *own_email(root)]
+        commits = own_commits(root, mine, start, end)
+        merges = own_merges(root, mine, start, end)
         if commits or merges or name in by_name:
             act = by_name.setdefault(name, Activity(name, product_for(name, mapping)))
             act.commits, act.merges = commits, merges
