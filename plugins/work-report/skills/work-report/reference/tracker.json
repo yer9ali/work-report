@@ -1,0 +1,6 @@
+{
+  "url": "https://task.avantage.one/api/v1",
+  "products": {
+    "Metrix Maps": {"client_id": 14, "product_id": 11}
+  }
+}

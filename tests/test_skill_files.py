@@ -28,3 +28,11 @@ def test_reglament_carries_the_four_part_blocker_rule() -> None:
 
     for word in ("От кого", "До", "Последствие", "РИСК СРОКА", "не более 5"):
         assert word in text
+
+
+def test_tracker_config_maps_products_to_ids() -> None:
+    tracker = json.loads((SKILL / "reference/tracker.json").read_text(encoding="utf-8"))
+
+    assert tracker["url"].startswith("https://")
+    for ids in tracker["products"].values():
+        assert isinstance(ids["client_id"], int) and isinstance(ids["product_id"], int)
