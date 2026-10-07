@@ -147,3 +147,11 @@ def test_sessions_in_excluded_paths_are_skipped(tmp_path: Path) -> None:
     assert done.returncode == 0, done.stderr
     assert "служебная сессия" not in done.stdout
     assert "давай пройдём цикл" in done.stdout
+
+
+def test_check_update_reads_own_version_and_stays_quiet_offline() -> None:
+    import digest
+
+    assert digest._version(digest.PLUGIN_JSON.read_text(encoding="utf-8")) >= (0, 3, 2)
+    digest.LATEST_URL = "http://127.0.0.1:9/plugin.json"  # nothing listens: offline
+    assert digest._check_update() == 0

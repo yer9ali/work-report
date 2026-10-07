@@ -13,7 +13,15 @@
 Или из терминала: `claude plugin marketplace add yer9ali/work-report` и
 `claude plugin install work-report@work-report`. Затем перезапустите Claude Code.
 
-Чтобы обновления приходили сами, включите автообновление маркетплейса: `/plugin` → Marketplaces.
+Обновление вручную:
+```
+/plugin marketplace update work-report
+/plugin update work-report
+```
+Затем перезапустите Claude Code. Для сторонних маркетплейсов автообновление по умолчанию
+выключено. Чтобы обновления приходили сами, включите его: `/plugin` → Marketplaces →
+work-report → Enable auto-update. Если вышла новая версия, `/work-report` скажет об этом в
+начале ответа.
 
 ## Вызов
 - `/work-report` — карточки за сегодня;

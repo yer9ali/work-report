@@ -3,6 +3,7 @@
 
 digest.py --from 2026-10-07 --to 2026-10-07
 digest.py --suggest-authors
+digest.py --check-update
 """
 
 from __future__ import annotations
@@ -10,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import urllib.request
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -26,6 +28,11 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_REPORTS = Path("~/work-reports").expanduser()
 EXIT_BAD_CONFIG = 3
 DEFAULT_EXCLUDES = ("~/.claude-mem",)
+PLUGIN_JSON = HERE.parents[2] / ".claude-plugin" / "plugin.json"
+LATEST_URL = (
+    "https://raw.githubusercontent.com/yer9ali/work-report/main/"
+    "plugins/work-report/.claude-plugin/plugin.json"
+)
 
 
 def _args(argv: list[str]) -> argparse.Namespace:
@@ -39,6 +46,7 @@ def _args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--tz", help="IANA zone; default — local zone of the machine")
     p.add_argument("--suggest-authors", action="store_true")
     p.add_argument("--days", type=int, default=14)
+    p.add_argument("--check-update", action="store_true")
     return p.parse_args(argv)
 
 
@@ -66,8 +74,30 @@ def _suggest(args: argparse.Namespace) -> int:
     return 0
 
 
+def _version(text: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in json.loads(text)["version"].split("."))
+
+
+def _check_update() -> int:
+    try:
+        mine = _version(PLUGIN_JSON.read_text(encoding="utf-8"))
+        with urllib.request.urlopen(LATEST_URL, timeout=3) as resp:
+            latest = _version(resp.read().decode("utf-8"))
+    except (OSError, ValueError, KeyError):
+        return 0  # ponytail: offline or odd version — stay silent, the report matters more
+    if latest > mine:
+        print(
+            f"доступна версия {'.'.join(map(str, latest))} (установлена "
+            f"{'.'.join(map(str, mine))}): /plugin marketplace update work-report, "
+            "затем /plugin update work-report и перезапуск Claude Code"
+        )
+    return 0
+
+
 def main(argv: list[str]) -> int:
     args = _args(argv)
+    if args.check_update:
+        return _check_update()
     if args.suggest_authors:
         return _suggest(args)
     if args.start is None or args.end is None:
